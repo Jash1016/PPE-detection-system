@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPE Monitoring Dashboard</title>
+<style>
+  :root{--bg:#0f1117;--panel:#1a1d27;--border:#2a2e3b;--txt:#e6e9ef;--muted:#8b90a0;--red:#ff4d4f;--accent:#4f8cff}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+  header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+  header h1{font-size:18px;margin:0;font-weight:600}
+  .stats{display:flex;gap:12px;margin-left:auto;flex-wrap:wrap}
+  .stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 14px;min-width:90px}
+  .stat .n{font-size:22px;font-weight:700}
+  .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .stat.alert .n{color:var(--red)}
+  main{display:grid;grid-template-columns:1fr 380px;gap:16px;padding:16px 24px}
+  @media(max-width:1000px){main{grid-template-columns:1fr}}
+  .feeds{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+  .feed{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:relative}
+  .feed h3{margin:0;padding:10px 14px;font-size:13px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+  .dot{width:8px;height:8px;border-radius:50%;background:#3ecf6b;display:inline-block;margin-right:6px}
+  .feed .rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;border-radius:6px}
+  .feed .rm:hover{color:var(--red);background:#2a1d22}
+
+  /* live video viewport (zoom/pan happen here) */
+  .viewport{position:relative;overflow:hidden;background:#000;aspect-ratio:16/9}
+  .viewport img.stream{width:100%;height:100%;display:block;object-fit:contain;
+    transform-origin:center center;transition:transform .04s linear;user-select:none;-webkit-user-drag:none}
+  .speed-badge{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.65);color:#fff;
+    font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;display:none}
+  .viewport:fullscreen{aspect-ratio:auto;width:100vw;height:100vh}
+  .viewport:fullscreen img.stream{height:100vh}
+
+  /* per-feed control bar */
+  .controls{display:flex;flex-wrap:wrap;gap:4px;padding:8px 10px;border-top:1px solid var(--border);align-items:center}
+  .controls button{background:#12141c;border:1px solid var(--border);color:var(--txt);
+    border-radius:7px;padding:5px 8px;font-size:13px;cursor:pointer;line-height:1}
+  .controls button:hover{border-color:var(--accent);color:var(--accent)}
+  .controls .sep{width:1px;height:18px;background:var(--border);margin:0 2px}
+
+  .add-tile{background:var(--panel);border:1px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;cursor:pointer;aspect-ratio:16/9;color:var(--muted);transition:border-color .15s,color .15s}
+  .add-tile:hover{border-color:var(--accent);color:var(--accent)}
+  .add-tile .plus{font-size:34px;line-height:1;font-weight:300}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50}
+  .overlay.open{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:22px;width:380px;max-width:92vw}
+  .modal h2{margin:0 0 16px;font-size:16px}
+  .modal label{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px}
+  .modal input[type=text],.modal input[type=number],.modal input[type=file],.modal select{
+    width:100%;background:#12141c;border:1px solid var(--border);border-radius:8px;color:var(--txt);
+    padding:9px 10px;font-size:13px}
+  .type-tabs{display:flex;gap:6px}
+  .type-tabs button{flex:1;background:#12141c;border:1px solid var(--border);color:var(--muted);
+    border-radius:8px;padding:8px 6px;font-size:12px;cursor:pointer}
+  .type-tabs button.active{border-color:var(--accent);color:var(--accent);background:#182338}
+  .res-row{display:flex;gap:8px}
+  .res-row > div{flex:1}
+  .modal .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+  .modal button.primary{background:var(--accent);border:none;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer}
+  .modal button.secondary{background:none;border:1px solid var(--border);color:var(--muted);padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer}
+  .modal .err{color:var(--red);font-size:12px;margin-top:10px;min-height:14px}
+  .hint{font-size:11px;color:var(--muted);margin-top:4px}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;height:fit-content}
+  .panel h2{font-size:14px;margin:0 0 12px}
+  .log{max-height:70vh;overflow-y:auto}
+  .row{display:flex;gap:10px;padding:8px;border-radius:8px;border:1px solid var(--border);margin-bottom:8px;align-items:center}
+  .row img{width:64px;height:48px;object-fit:cover;border-radius:6px;background:#000}
+  .row .meta{flex:1;min-width:0}
+  .badge{display:inline-block;background:var(--red);color:#fff;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
+  .row .sub{font-size:11px;color:var(--muted);margin-top:3px}
+  a.dl{margin-left:auto;font-size:12px;color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>🦺 PPE Monitoring Dashboard</h1>
+  <div class="stats">
+    <div class="stat"><div class="n" id="s-total">0</div><div class="l">Total</div></div>
+    <div class="stat alert"><div class="n" id="s-today">0</div><div class="l">Today</div></div>
+    <div class="stat"><div class="n" id="s-feeds">0</div><div class="l">Feeds</div></div>
+  </div>
+</header>
+<main>
+  <div>
+    <div class="feeds" id="feeds"></div>
+  </div>
+  <div class="panel">
+    <h2>Violations Log <a class="dl" href="/export.csv">Export CSV</a></h2>
+    <div class="log" id="log"></div>
+  </div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>Add a feed</h2>
+
+    <label>Feed name</label>
+    <input type="text" id="f-name" placeholder="e.g. Gate A">
+
+    <label>Source type</label>
+    <div class="type-tabs">
+      <button type="button" data-type="camera" class="active">📷 Camera</button>
+      <button type="button" data-type="video">🎞️ Video File</button>
+      <button type="button" data-type="rtsp">🌐 RTSP</button>
+    </div>
+
+    <div id="fields-camera">
+      <label>Camera index</label>
+      <input type="number" id="f-camera-index" value="0" min="0" step="1">
+      <div class="hint">0 is usually your default/built-in webcam. Try 1, 2… for additional USB cameras.</div>
+    </div>
+
+    <div id="fields-video" style="display:none">
+      <label>Video file</label>
+      <input type="file" id="f-video" accept=".mp4,.avi,.mov,.mkv,.wmv,video/*">
+      <div class="hint">Uploaded to the server and looped automatically.</div>
+    </div>
+
+    <div id="fields-rtsp" style="display:none">
+      <label>RTSP URL</label>
+      <input type="text" id="f-rtsp" placeholder="rtsp://user:pass@192.168.1.50:554/stream1">
+    </div>
+
+    <label>Resolution (optional)</label>
+    <div class="res-row">
+      <div><input type="number" id="f-width" placeholder="Width"></div>
+      <div><input type="number" id="f-height" placeholder="Height"></div>
+    </div>
+
+    <div class="err" id="f-err"></div>
+    <div class="actions">
+      <button class="secondary" type="button" id="f-cancel">Cancel</button>
+      <button class="primary" type="button" id="f-submit">Add feed</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const feedsEl = document.getElementById('feeds');
+const feedState = {};                 // name -> {speed, zoom, tx, ty, paused}
+const SPEEDS = [0.25, 0.5, 1, 2, 4];  // slow <-> fast-forward steps
+let currentType = 'camera';
+
+// ---- feed tile markup ------------------------------------------------------
+function feedTileHTML(f){
+  const name = f.name;
+  const fh = f.is_file ? '' : 'style="display:none"';   // file-only controls
+  return `<h3><span><span class="dot"></span>${name}</span>
+    <button class="rm" title="Remove feed" onclick="removeFeed('${name}')">×</button></h3>
+    <div class="viewport">
+      <img class="stream" src="/stream/${encodeURIComponent(name)}" alt="${name}" draggable="false">
+      <div class="speed-badge" data-role="speed"></div>
+    </div>
+    <div class="controls">
+      <button ${fh} title="Restart" data-act="restart">⏮</button>
+      <button ${fh} title="Back 5s" data-act="seek" data-val="-5">⏪</button>
+      <button title="Play / Pause" data-act="toggle" data-role="pp">⏸</button>
+      <button ${fh} title="Forward 5s" data-act="seek" data-val="5">⏩</button>
+      <button ${fh} title="Step 1 frame" data-act="step">⏭</button>
+      <span class="sep" ${fh}></span>
+      <button ${fh} title="Slower" data-act="slow">🐢</button>
+      <button ${fh} title="Faster" data-act="fast">🐇</button>
+      <span class="sep"></span>
+      <button title="Zoom out" data-zoom="-1">🔍−</button>
+      <button title="Zoom in" data-zoom="1">🔍+</button>
+      <button title="Reset view" data-zoom="0">⟲</button>
+      <button title="Fullscreen" data-fs>⛶</button>
+      <button title="Save snapshot" data-snap>📷</button>
+    </div>`;
+}
+
+function renderAddTile(){
+  const d = document.createElement('div');
+  d.className = 'add-tile';
+  d.id = 'add-tile';
+  d.innerHTML = `<div class="plus">+</div><div>Add feed</div>`;
+  d.onclick = openModal;
+  feedsEl.appendChild(d);
+}
+
+// Diff-based render: keep existing tiles (so streams/zoom don't reset), add
+// new ones, remove gone ones, and sync the dynamic bits (pause glyph, speed).
+async function loadFeeds(){
+  let list;
+  try{ list = await (await fetch('/api/feeds')).json(); }catch(e){ return; }
+  const names = new Set(list.map(f=>f.name));
+  feedsEl.querySelectorAll('.feed').forEach(el=>{
+    if(!names.has(el.dataset.name)) el.remove();
+  });
+  const addTile = document.getElementById('add-tile');
+  list.forEach(f=>{
+    let d = null;
+    feedsEl.querySelectorAll('.feed').forEach(el=>{ if(el.dataset.name === f.name) d = el; });
+    if(!d){
+      d = document.createElement('div');
+      d.className = 'feed';
+      d.dataset.name = f.name;
+      d.innerHTML = feedTileHTML(f);
+      feedsEl.insertBefore(d, addTile);
+      if(!feedState[f.name]) feedState[f.name] = {speed:f.speed||1, zoom:1, tx:0, ty:0, paused:!!f.paused};
+      attachPan(d);
+    }
+    updateFeedUI(d, f);
+  });
+  document.getElementById('s-feeds').textContent = list.length;
+}
+
+function updateFeedUI(d, f){
+  const s = feedState[f.name]; if(!s) return;
+  s.paused = !!f.paused;
+  if(typeof f.speed === 'number') s.speed = f.speed;
+  const pp = d.querySelector('[data-role="pp"]');
+  if(pp) pp.textContent = s.paused ? '▶' : '⏸';
+  const badge = d.querySelector('[data-role="speed"]');
+  if(badge){
+    if(f.is_file && s.speed !== 1){ badge.style.display = 'block'; badge.textContent = s.speed + '×'; }
+    else badge.style.display = 'none';
+  }
+}
+
+async function removeFeed(name){
+  if(!confirm(`Remove feed "${name}"? This stops the camera/video and its live tile.`)) return;
+  await fetch('/api/feeds/' + encodeURIComponent(name), {method:'DELETE'});
+  delete feedState[name];
+  loadFeeds();
+}
+
+// ---- control-bar clicks (event delegation) --------------------------------
+feedsEl.addEventListener('click', async (e)=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  const d = btn.closest('.feed'); if(!d) return;
+  const name = d.dataset.name;
+  if(btn.classList.contains('rm')) return;                 // handled inline
+
+  if(btn.dataset.zoom !== undefined){ zoom(d, +btn.dataset.zoom); return; }
+  if(btn.hasAttribute('data-fs')){ fullscreen(d.querySelector('.viewport')); return; }
+  if(btn.hasAttribute('data-snap')){ snapshot(name, d.querySelector('img.stream')); return; }
+
+  const act = btn.dataset.act; if(!act) return;
+  if(act === 'slow' || act === 'fast'){ cycleSpeed(d, act); return; }
+
+  const body = {action: act};
+  if(act === 'seek') body.value = +btn.dataset.val;
+  const st = await postControl(name, body);
+  if(st) updateFeedUI(d, {name, ...st});
+});
+
+async function postControl(name, body){
+  try{
+    const r = await fetch(`/api/feeds/${encodeURIComponent(name)}/control`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    return r.ok ? await r.json() : null;
+  }catch(e){ return null; }
+}
+
+function cycleSpeed(d, dir){
+  const s = feedState[d.dataset.name];
+  let i = SPEEDS.indexOf(s.speed); if(i < 0) i = 2;
+  i = dir === 'fast' ? Math.min(SPEEDS.length-1, i+1) : Math.max(0, i-1);
+  s.speed = SPEEDS[i];
+  postControl(d.dataset.name, {action:'speed', value:s.speed});
+  updateFeedUI(d, {name:d.dataset.name, is_file:true, speed:s.speed, paused:s.paused});
+}
+
+// ---- client-side zoom / pan -----------------------------------------------
+function zoom(d, dir){
+  const s = feedState[d.dataset.name];
+  if(dir === 0){ s.zoom = 1; s.tx = 0; s.ty = 0; }
+  else{
+    s.zoom = Math.min(6, Math.max(1, +(s.zoom + dir*0.25).toFixed(2)));
+    if(s.zoom <= 1){ s.zoom = 1; s.tx = 0; s.ty = 0; }
+  }
+  applyTransform(d);
+}
+
+function applyTransform(d){
+  const s = feedState[d.dataset.name];
+  const img = d.querySelector('img.stream');
+  img.style.transform = `translate(${s.tx}px, ${s.ty}px) scale(${s.zoom})`;
+  img.style.cursor = s.zoom > 1 ? 'grab' : 'default';
+}
+
+function attachPan(d){
+  const img = d.querySelector('img.stream');
+  let dragging = false, sx = 0, sy = 0;
+  img.addEventListener('mousedown', e=>{
+    const s = feedState[d.dataset.name]; if(s.zoom <= 1) return;
+    dragging = true; sx = e.clientX - s.tx; sy = e.clientY - s.ty;
+    img.style.cursor = 'grabbing'; e.preventDefault();
+  });
+  window.addEventListener('mousemove', e=>{
+    if(!dragging) return;
+    const s = feedState[d.dataset.name];
+    s.tx = e.clientX - sx; s.ty = e.clientY - sy; applyTransform(d);
+  });
+  window.addEventListener('mouseup', ()=>{ if(dragging){ dragging = false; applyTransform(d); } });
+  img.addEventListener('dblclick', ()=> zoom(d, 0));
+  d.querySelector('.viewport').addEventListener('wheel', e=>{
+    e.preventDefault(); zoom(d, e.deltaY < 0 ? 1 : -1);
+  }, {passive:false});
+}
+
+function fullscreen(el){
+  if(document.fullscreenElement) document.exitFullscreen();
+  else if(el.requestFullscreen) el.requestFullscreen();
+}
+
+function snapshot(name, img){
+  try{
+    const c = document.createElement('canvas');
+    c.width  = img.naturalWidth  || img.clientWidth;
+    c.height = img.naturalHeight || img.clientHeight;
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const a = document.createElement('a');
+    a.download = `${name}_${Date.now()}.png`;
+    a.href = c.toDataURL('image/png');
+    a.click();
+  }catch(e){ alert('Snapshot failed: ' + e.message); }
+}
+
+// ---- add-feed modal --------------------------------------------------------
+function openModal(){
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('f-err').textContent = '';
+}
+function closeModal(){
+  document.getElementById('overlay').classList.remove('open');
+}
+document.getElementById('f-cancel').onclick = closeModal;
+document.getElementById('overlay').addEventListener('click', e=>{
+  if(e.target.id === 'overlay') closeModal();
+});
+
+document.querySelectorAll('.type-tabs button').forEach(btn=>{
+  btn.onclick = () => {
+    document.querySelectorAll('.type-tabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentType = btn.dataset.type;
+    document.getElementById('fields-camera').style.display = currentType==='camera' ? '' : 'none';
+    document.getElementById('fields-video').style.display  = currentType==='video'  ? '' : 'none';
+    document.getElementById('fields-rtsp').style.display   = currentType==='rtsp'   ? '' : 'none';
+  };
+});
+
+document.getElementById('f-submit').onclick = async () => {
+  const errEl = document.getElementById('f-err');
+  errEl.textContent = '';
+  const name = document.getElementById('f-name').value.trim();
+  if(!name){ errEl.textContent = 'Feed name is required.'; return; }
+
+  const fd = new FormData();
+  fd.append('name', name);
+  fd.append('source_type', currentType);
+  fd.append('width', document.getElementById('f-width').value);
+  fd.append('height', document.getElementById('f-height').value);
+
+  if(currentType === 'camera'){
+    fd.append('camera_index', document.getElementById('f-camera-index').value || '0');
+  } else if(currentType === 'rtsp'){
+    const url = document.getElementById('f-rtsp').value.trim();
+    if(!url.startsWith('rtsp://')){ errEl.textContent = 'RTSP URL must start with rtsp://'; return; }
+    fd.append('rtsp_url', url);
+  } else if(currentType === 'video'){
+    const file = document.getElementById('f-video').files[0];
+    if(!file){ errEl.textContent = 'Please choose a video file.'; return; }
+    fd.append('video', file);
+  }
+
+  const submitBtn = document.getElementById('f-submit');
+  submitBtn.disabled = true; submitBtn.textContent = 'Adding…';
+  try{
+    const res = await fetch('/api/feeds', {method:'POST', body: fd});
+    const data = await res.json();
+    if(!res.ok){ errEl.textContent = data.error || 'Failed to add feed.'; return; }
+    closeModal();
+    document.getElementById('f-name').value = '';
+    await loadFeeds();
+  }catch(e){
+    errEl.textContent = 'Network error adding feed.';
+  }finally{
+    submitBtn.disabled = false; submitBtn.textContent = 'Add feed';
+  }
+};
+
+// ---- stats + violations log ------------------------------------------------
+async function refresh(){
+  try{
+    const st = await (await fetch('/api/stats')).json();
+    document.getElementById('s-total').textContent = st.total;
+    document.getElementById('s-today').textContent = st.today;
+    const vs = await (await fetch('/api/violations')).json();
+    const log = document.getElementById('log');
+    log.innerHTML = vs.map(v=>`
+      <div class="row">
+        ${v.snapshot?`<img src="/${v.snapshot}" onerror="this.style.display='none'">`:''}
+        <div class="meta">
+          <span class="badge">${v.violation.replace(/_/g,' ')}</span>
+          <div class="sub">${v.feed_name}${v.track_id!=null?' • ID '+v.track_id:''} • ${Math.round(v.confidence*100)}%</div>
+          <div class="sub">${v.date} ${v.time}</div>
+        </div>
+      </div>`).join('') || '<div class="sub">No violations yet.</div>';
+  }catch(e){console.error(e)}
+}
+
+renderAddTile();
+loadFeeds();
+refresh();
+setInterval(refresh, 3000);
+setInterval(loadFeeds, 8000);
+</script>
+</body>
+</html>

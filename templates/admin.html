@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Users · PPE Monitoring</title>
+<style>
+  :root{
+    --bg:#0a0d14; --surface:#121826; --surface-2:#1a2233; --surface-3:#212b40;
+    --border:#232c3f; --border-hi:#37435f;
+    --txt:#eaeff8; --muted:#8b96ad; --faint:#5d6880;
+    --accent:#5b8dff; --accent-2:#3a6fe0; --accent-dim:#172341;
+    --danger:#ff5d6c; --danger-dim:#331a21;
+    --warn:#ffb02e; --ok:#3ddc84; --violet:#a78bfa;
+    --shadow:0 10px 34px rgba(0,0,0,.5);
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;color:var(--txt);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--bg);
+    background-image:radial-gradient(1100px 520px at 12% -8%, #182645 0%, transparent 62%);
+    background-attachment:fixed}
+
+  header{padding:16px 24px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    background:rgba(10,13,20,.7);backdrop-filter:blur(10px);
+    position:sticky;top:0;z-index:20}
+  header h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em}
+  .spacer{margin-left:auto}
+  .hbtn{background:var(--surface-2);border:1px solid var(--border);color:var(--txt);
+    border-radius:10px;padding:8px 13px;font-size:12.5px;cursor:pointer;
+    text-decoration:none;display:inline-block;transition:.15s}
+  .hbtn:hover{border-color:var(--border-hi);background:var(--surface-3)}
+  .hbtn.accent{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .hbtn.accent:hover{background:var(--accent-2)}
+
+  main{padding:22px 24px;display:grid;grid-template-columns:1fr 350px;gap:18px;align-items:start}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+    padding:20px;box-shadow:var(--shadow)}
+  .panel h2{font-size:13px;margin:0 0 16px;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--muted);font-weight:700}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-size:10.5px;color:var(--faint);text-transform:uppercase;
+     letter-spacing:.07em;padding:0 10px 10px;font-weight:700}
+  td{padding:13px 10px;border-top:1px solid var(--border);vertical-align:middle}
+  tr:hover td{background:rgba(255,255,255,.018)}
+  .uname{font-weight:650;font-size:14px}
+  .since{font-size:11px;color:var(--faint);margin-top:3px}
+
+  .pill{display:inline-block;font-size:10px;font-weight:800;padding:3px 10px;
+    border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
+  .pill.admin{background:rgba(167,139,250,.14);color:var(--violet);border:1px solid rgba(167,139,250,.3)}
+  .pill.user{background:rgba(91,141,255,.13);color:var(--accent);border:1px solid rgba(91,141,255,.28)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .chip{background:var(--surface-2);border:1px solid var(--border);border-radius:20px;
+    font-size:11px;padding:3px 10px;color:var(--txt)}
+  .chip.all{background:rgba(61,220,132,.1);border-color:rgba(61,220,132,.28);color:var(--ok)}
+  .chip.none{background:var(--danger-dim);border-color:rgba(255,93,108,.3);color:var(--danger)}
+
+  .act{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .btn{background:var(--surface-2);border:1px solid var(--border);color:var(--txt);
+    border-radius:9px;padding:7px 12px;font-size:12px;cursor:pointer;transition:.15s}
+  .btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+  .btn.danger:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-dim)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .btn.primary:hover{background:var(--accent-2);color:#fff}
+  .btn.solid-danger{background:var(--danger);border-color:var(--danger);color:#fff;font-weight:600}
+  .btn.solid-danger:hover{filter:brightness(1.1);color:#fff}
+  .btn:disabled{opacity:.45;cursor:default}
+
+  label{display:block;font-size:11.5px;color:var(--muted);margin:15px 0 7px;font-weight:500}
+  input[type=text],input[type=password],select{width:100%;background:var(--bg);
+    border:1px solid var(--border);border-radius:10px;color:var(--txt);
+    padding:11px 12px;font-size:13.5px;transition:.15s;font-family:inherit}
+  input:focus,select:focus{outline:none;border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(91,141,255,.15)}
+
+  .feedlist{border:1px solid var(--border);border-radius:10px;padding:6px;
+    max-height:200px;overflow-y:auto;background:var(--bg)}
+  .feedlist label{display:flex;align-items:center;gap:10px;margin:0;padding:9px 10px;
+    font-size:13px;color:var(--txt);cursor:pointer;border-radius:8px;font-weight:400}
+  .feedlist label:hover{background:var(--surface-2)}
+  .feedlist input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+  .empty{font-size:12px;color:var(--faint);padding:12px;text-align:center}
+  .hint{font-size:11px;color:var(--faint);margin-top:7px;line-height:1.5}
+
+  /* ---- dialogs ---- */
+  .dlg{position:fixed;inset:0;background:rgba(5,7,12,.72);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;z-index:60;padding:20px}
+  .dlg.open{display:flex;animation:fade .16s ease}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .dlg-box{background:var(--surface);border:1px solid var(--border-hi);
+    border-radius:16px;padding:24px;width:420px;max-width:100%;box-shadow:var(--shadow);
+    animation:pop .18s cubic-bezier(.2,.9,.3,1.2)}
+  @keyframes pop{from{transform:translateY(10px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+  .dlg-box h3{margin:0 0 6px;font-size:16px;font-weight:650}
+  .dlg-box .sub{font-size:12.5px;color:var(--muted);margin-bottom:6px;line-height:1.55}
+  .dlg-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:22px}
+  .dlg-err{color:var(--danger);font-size:12px;margin-top:11px;min-height:15px}
+  .warnbox{background:var(--danger-dim);border:1px solid rgba(255,93,108,.28);
+    border-radius:10px;padding:12px 14px;font-size:12.5px;color:#ffc4ca;margin-top:14px;line-height:1.55}
+
+  /* ---- toast ---- */
+  #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);
+    background:var(--surface-2);border:1px solid var(--border-hi);border-radius:11px;
+    padding:12px 20px;font-size:13px;box-shadow:var(--shadow);z-index:90;
+    opacity:0;transition:.28s cubic-bezier(.2,.9,.3,1.1);pointer-events:none;max-width:90vw}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.ok{border-color:rgba(61,220,132,.45)}
+  #toast.err{border-color:rgba(255,93,108,.5)}
+
+  @media(max-width:900px){
+    main{grid-template-columns:1fr;padding:16px 14px;gap:14px}
+    header{padding:13px 14px;gap:10px}
+    header h1{font-size:15px}
+    .panel{padding:16px}
+    thead{display:none}
+    table,tbody,tr,td{display:block;width:100%}
+    tr{border:1px solid var(--border);border-radius:12px;margin-bottom:11px;
+       padding:13px;background:var(--surface-2)}
+    tr:hover td{background:none}
+    td{border:none;padding:5px 0}
+    td[data-l]::before{content:attr(data-l);display:block;font-size:10px;
+      color:var(--faint);text-transform:uppercase;letter-spacing:.07em;
+      margin-bottom:5px;font-weight:700}
+    .act{justify-content:flex-start;margin-top:8px}
+    .act .btn{flex:1;text-align:center}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>👥 User Management</h1>
+  <span class="spacer"></span>
+  <a class="hbtn" href="/">← Dashboard</a>
+  <a class="hbtn" href="/logout">Log out</a>
+</header>
+
+<main>
+  <div class="panel">
+    <h2>Accounts</h2>
+    <table>
+      <thead><tr><th>User</th><th>Role</th><th>Feed access</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Add a user</h2>
+    <label>Username</label>
+    <input type="text" id="n-user" autocomplete="off" placeholder="e.g. supervisor">
+
+    <label>Password</label>
+    <input type="password" id="n-pass" autocomplete="new-password" placeholder="At least 4 characters">
+
+    <label>Role</label>
+    <select id="n-role">
+      <option value="user">User — only assigned feeds, view only</option>
+      <option value="admin">Admin — all feeds, full control</option>
+    </select>
+
+    <div id="n-feeds-wrap">
+      <label>Feeds this user may view</label>
+      <div class="feedlist" id="n-feeds"></div>
+      <div class="hint">Admins always see every feed, so this is ignored for them.</div>
+    </div>
+
+    <div style="margin-top:20px"><button class="btn primary" style="width:100%;padding:11px" id="n-add">Create user</button></div>
+    <div class="dlg-err" id="n-msg"></div>
+  </div>
+</main>
+
+<!-- feed access dialog -->
+<div class="dlg" id="dlg-feeds">
+  <div class="dlg-box">
+    <h3>Feed access</h3>
+    <div class="sub" id="fd-sub"></div>
+    <div class="feedlist" id="fd-list" style="margin-top:14px"></div>
+    <div class="hint">Unticked feeds are completely hidden — including their
+      snapshots, violation log entries and CSV rows.</div>
+    <div class="dlg-actions">
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn primary" id="fd-save">Save access</button>
+    </div>
+  </div>
+</div>
+
+<!-- password dialog -->
+<div class="dlg" id="dlg-pw">
+  <div class="dlg-box">
+    <h3>Change password</h3>
+    <div class="sub" id="pw-sub"></div>
+    <label>New password</label>
+    <input type="password" id="pw-1" autocomplete="new-password">
+    <label>Confirm password</label>
+    <input type="password" id="pw-2" autocomplete="new-password">
+    <div class="dlg-err" id="pw-err"></div>
+    <div class="dlg-actions">
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn primary" id="pw-save">Update password</button>
+    </div>
+  </div>
+</div>
+
+<!-- delete dialog -->
+<div class="dlg" id="dlg-del">
+  <div class="dlg-box">
+    <h3>Delete user</h3>
+    <div class="sub" id="del-sub"></div>
+    <div class="warnbox">This permanently removes the account and its feed
+      permissions. Violations they recorded are kept.</div>
+    <div class="dlg-actions">
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn solid-danger" id="del-go">Delete account</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let FEEDS = [], USERS = [], target = null;
+
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function toast(msg, kind){
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'show ' + (kind || '');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>{ t.className = kind || ''; }, 2800);
+}
+
+// ---- dialog plumbing -------------------------------------------------------
+function openDlg(id){ $(id).classList.add('open'); }
+function closeDlg(id){ $(id).classList.remove('open'); }
+document.querySelectorAll('.dlg').forEach(d=>{
+  d.addEventListener('click', e=>{
+    if(e.target === d || e.target.hasAttribute('data-close')) d.classList.remove('open');
+  });
+});
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape') document.querySelectorAll('.dlg.open').forEach(d=>d.classList.remove('open'));
+});
+
+// ---- data ------------------------------------------------------------------
+async function load(){
+  const r = await fetch('/api/users');
+  if(!r.ok){ location.href = '/login'; return; }
+  const d = await r.json();
+  FEEDS = d.feeds || [];
+  USERS = d.users || [];
+  renderPicker($('n-feeds'), []);
+  $('rows').innerHTML = USERS.map(rowHTML).join('');
+}
+
+function rowHTML(u){
+  const feeds = u.role === 'admin'
+    ? '<span class="chip all">all feeds</span>'
+    : (u.feeds.length
+        ? u.feeds.map(f=>`<span class="chip">${esc(f)}</span>`).join('')
+        : '<span class="chip none">no access</span>');
+  return `<tr>
+    <td data-l="User"><div class="uname">${esc(u.username)}</div>
+        <div class="since">since ${(u.created_at||'').slice(0,10)}</div></td>
+    <td data-l="Role"><span class="pill ${u.role}">${u.role}</span></td>
+    <td data-l="Feed access"><div class="chips">${feeds}</div></td>
+    <td><div class="act">
+      ${u.role !== 'admin' ? `<button class="btn" onclick="askFeeds(${u.id})">Feeds</button>` : ''}
+      <button class="btn" onclick="askPw(${u.id})">Password</button>
+      <button class="btn danger" onclick="askDel(${u.id})">Delete</button>
+    </div></td>
+  </tr>`;
+}
+
+function renderPicker(el, checked){
+  if(!FEEDS.length){
+    el.innerHTML = '<div class="empty">No feeds exist yet.<br>Add feeds on the dashboard first.</div>';
+    return;
+  }
+  el.innerHTML = FEEDS.map(f=>`<label>
+      <input type="checkbox" value="${esc(f)}" ${checked.includes(f)?'checked':''}>
+      <span>${esc(f)}</span></label>`).join('');
+}
+const picked = el => [...el.querySelectorAll('input:checked')].map(c=>c.value);
+
+// ---- feed access -----------------------------------------------------------
+function askFeeds(uid){
+  target = USERS.find(u=>u.id === uid); if(!target) return;
+  $('fd-sub').innerHTML = `Choose which feeds <b>${esc(target.username)}</b> can see.`;
+  renderPicker($('fd-list'), target.feeds);
+  openDlg('dlg-feeds');
+}
+$('fd-save').onclick = async () => {
+  const feeds = picked($('fd-list'));
+  const r = await fetch('/api/users/' + target.id, {method:'PATCH',
+    headers:{'Content-Type':'application/json'}, body: JSON.stringify({feeds})});
+  closeDlg('dlg-feeds');
+  toast(r.ok ? `Updated access for "${target.username}".` : 'Could not update access.',
+        r.ok ? 'ok' : 'err');
+  load();
+};
+
+// ---- password --------------------------------------------------------------
+function askPw(uid){
+  target = USERS.find(u=>u.id === uid); if(!target) return;
+  $('pw-sub').innerHTML = `Set a new password for <b>${esc(target.username)}</b>.`;
+  $('pw-1').value = ''; $('pw-2').value = ''; $('pw-err').textContent = '';
+  openDlg('dlg-pw');
+  setTimeout(()=>$('pw-1').focus(), 60);
+}
+$('pw-save').onclick = async () => {
+  const a = $('pw-1').value, b = $('pw-2').value;
+  if(a.length < 4){ $('pw-err').textContent = 'Use at least 4 characters.'; return; }
+  if(a !== b){ $('pw-err').textContent = 'The two passwords do not match.'; return; }
+  const r = await fetch('/api/users/' + target.id, {method:'PATCH',
+    headers:{'Content-Type':'application/json'}, body: JSON.stringify({password:a})});
+  closeDlg('dlg-pw');
+  toast(r.ok ? `Password updated for "${target.username}".` : 'Could not update password.',
+        r.ok ? 'ok' : 'err');
+};
+$('pw-2').addEventListener('keydown', e=>{ if(e.key === 'Enter') $('pw-save').click(); });
+
+// ---- delete ----------------------------------------------------------------
+function askDel(uid){
+  target = USERS.find(u=>u.id === uid); if(!target) return;
+  $('del-sub').innerHTML = `Are you sure you want to delete <b>${esc(target.username)}</b>?`;
+  openDlg('dlg-del');
+}
+$('del-go').onclick = async () => {
+  const r = await fetch('/api/users/' + target.id, {method:'DELETE'});
+  const d = await r.json().catch(()=>({}));
+  closeDlg('dlg-del');
+  toast(r.ok ? `Deleted "${target.username}".` : (d.error || 'Could not delete user.'),
+        r.ok ? 'ok' : 'err');
+  load();
+};
+
+// ---- create ----------------------------------------------------------------
+$('n-role').onchange = e => {
+  $('n-feeds-wrap').style.display = e.target.value === 'admin' ? 'none' : '';
+};
+$('n-add').onclick = async () => {
+  const msg = $('n-msg'); msg.textContent = '';
+  const body = {
+    username: $('n-user').value.trim(),
+    password: $('n-pass').value,
+    role: $('n-role').value,
+    feeds: picked($('n-feeds')),
+  };
+  if(!body.username || !body.password){
+    msg.textContent = 'Username and password are both required.'; return;
+  }
+  const r = await fetch('/api/users', {method:'POST',
+    headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  const d = await r.json().catch(()=>({}));
+  if(!r.ok){ msg.textContent = d.error || 'Could not create user.'; return; }
+  toast(`User "${body.username}" created.`, 'ok');
+  $('n-user').value = ''; $('n-pass').value = '';
+  load();
+};
+
+load();
+</script>
+</body>
+</html>

@@ -4,15 +4,31 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PPE Monitoring Dashboard</title>
 <style>
-  :root{--bg:#0f1117;--panel:#1a1d27;--border:#2a2e3b;--txt:#e6e9ef;--muted:#8b90a0;--red:#ff4d4f;--accent:#4f8cff}
+  :root{
+    --bg:#0a0d14; --panel:#121826; --surface-2:#1a2233; --surface-3:#212b40;
+    --border:#232c3f; --border-hi:#37435f;
+    --txt:#eaeff8; --muted:#8b96ad; --faint:#5d6880;
+    --accent:#5b8dff; --accent-2:#3a6fe0; --accent-dim:#172341;
+    --red:#ff5d6c; --red-dim:#331a21;
+    --warn:#ffb02e; --ok:#3ddc84; --violet:#a78bfa;
+    --shadow:0 10px 34px rgba(0,0,0,.5);
+    --r:14px;
+  }
   *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
-  header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
-  header h1{font-size:18px;margin:0;font-weight:600}
-  .stats{display:flex;gap:12px;margin-left:auto;flex-wrap:wrap}
-  .stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 14px;min-width:90px}
-  .stat .n{font-size:22px;font-weight:700}
-  .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  body{margin:0;color:var(--txt);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--bg);
+    background-image:radial-gradient(1100px 520px at 12% -8%, #182645 0%, transparent 62%);
+    background-attachment:fixed}
+  header{padding:14px 24px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    background:rgba(10,13,20,.72);backdrop-filter:blur(10px);position:sticky;top:0;z-index:20}
+  header h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em;white-space:nowrap}
+  .stats{display:flex;gap:10px;margin-left:auto;flex-wrap:wrap}
+  .stat{background:var(--surface-2);border:1px solid var(--border);border-radius:11px;
+    padding:8px 15px;min-width:88px}
+  .stat .n{font-size:21px;font-weight:750;line-height:1.15;font-variant-numeric:tabular-nums}
+  .stat .l{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
   .stat.alert .n{color:var(--red)}
   main{display:grid;grid-template-columns:1fr 380px;gap:16px;padding:16px 24px}
   @media(max-width:1000px){main{grid-template-columns:1fr}}
@@ -38,6 +54,10 @@
     border-radius:7px;padding:5px 8px;font-size:13px;cursor:pointer;line-height:1}
   .controls button:hover{border-color:var(--accent);color:var(--accent)}
   .controls .sep{width:1px;height:18px;background:var(--border);margin:0 2px}
+  /* model picker sits in the control bar and matches the buttons around it */
+  .controls select{background:#12141c;border:1px solid var(--border);color:var(--muted);
+    border-radius:7px;padding:5px 6px;font-size:12px;cursor:pointer;margin-left:auto}
+  .controls select:hover{border-color:var(--accent);color:var(--accent)}
 
   .add-tile{background:var(--panel);border:1px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;cursor:pointer;aspect-ratio:16/9;color:var(--muted);transition:border-color .15s,color .15s}
   .add-tile:hover{border-color:var(--accent);color:var(--accent)}
@@ -60,7 +80,11 @@
   .modal button.primary{background:var(--accent);border:none;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer}
   .modal button.secondary{background:none;border:1px solid var(--border);color:var(--muted);padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer}
   .modal .err{color:var(--red);font-size:12px;margin-top:10px;min-height:14px}
-  .hint{font-size:11px;color:var(--muted);margin-top:4px}
+  .hint{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .urlbox{background:var(--bg);border:1px solid var(--border);border-radius:8px;
+    padding:9px 11px;font-family:ui-monospace,Consolas,monospace;font-size:11.5px;
+    color:var(--ok);word-break:break-all;min-height:34px;line-height:1.45}
+  .urlbox.bad{color:var(--muted)}
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;height:fit-content}
   .panel h2{font-size:14px;margin:0 0 12px}
   .log{max-height:70vh;overflow-y:auto}
@@ -70,6 +94,144 @@
   .badge{display:inline-block;background:var(--red);color:#fff;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
   .row .sub{font-size:11px;color:var(--muted);margin-top:3px}
   a.dl{margin-left:auto;font-size:12px;color:var(--accent);text-decoration:none}
+
+  /* ---- header user chip ---- */
+  .who{display:flex;align-items:center;gap:10px;padding-left:16px;margin-left:6px;border-left:1px solid var(--border)}
+  .who .u{font-size:13px;font-weight:600}
+  .who .r{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#182338;color:#8fb6ff}
+  .who .r.admin{background:#2a2038;color:#c9a4ff}
+  .hbtn{background:#12141c;border:1px solid var(--border);color:var(--txt);border-radius:8px;
+    padding:7px 12px;font-size:12px;cursor:pointer;text-decoration:none;display:inline-block}
+  .hbtn:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* ---- snapshot gallery ---- */
+  .wide{width:1000px;max-width:94vw}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+  .filters > div{display:flex;flex-direction:column;gap:5px}
+  .filters label{margin:0;font-size:11px;color:var(--muted)}
+  .filters select,.filters input{background:#12141c;border:1px solid var(--border);
+    border-radius:8px;color:var(--txt);padding:7px 9px;font-size:12px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;
+    max-height:60vh;overflow-y:auto;padding-right:4px}
+  .cell{background:#12141c;border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer}
+  .cell:hover{border-color:var(--accent)}
+  .cell img{width:100%;height:120px;object-fit:cover;display:block;background:#000}
+  .cell .cap{padding:7px 9px;font-size:10px;color:var(--muted);line-height:1.5}
+  .cell .cap b{color:var(--txt);font-size:11px}
+  .pager{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:12px;color:var(--muted)}
+  .pager button{background:#12141c;border:1px solid var(--border);color:var(--txt);
+    border-radius:7px;padding:6px 12px;font-size:12px;cursor:pointer}
+  .pager button:disabled{opacity:.35;cursor:default}
+
+  /* ---- lightbox ---- */
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;
+    align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:80}
+  .lightbox.open{display:flex}
+  .lightbox img{max-width:88vw;max-height:76vh;border-radius:10px}
+  .lbbar{display:flex;gap:10px;align-items:center;font-size:13px;color:var(--txt)}
+  .lbbar a,.lbbar button{background:#12141c;border:1px solid var(--border);color:var(--txt);
+    border-radius:8px;padding:7px 13px;font-size:12px;cursor:pointer;text-decoration:none}
+  .lbbar a:hover,.lbbar button:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* ---- polish pass ---- */
+  .panel,.feed{box-shadow:var(--shadow);border-radius:var(--r)}
+  .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--muted);font-weight:700}
+  .feed h3{font-size:12.5px;font-weight:650;padding:11px 14px;background:var(--surface-2)}
+  .dot{box-shadow:0 0 0 3px rgba(61,220,132,.16)}
+  .controls{background:var(--surface-2)}
+  .controls button{background:var(--panel);border-radius:9px;padding:7px 10px;transition:.15s}
+  .controls button:hover{background:var(--accent-dim);border-color:var(--accent)}
+  .add-tile{border-radius:var(--r);border-width:2px}
+  .modal{border-radius:16px;border-color:var(--border-hi);box-shadow:var(--shadow)}
+  .modal input:focus,.filters select:focus,.filters input:focus{outline:none;
+    border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,141,255,.15)}
+  .badge{letter-spacing:.03em;text-transform:uppercase;font-size:9.5px;padding:3px 9px}
+  .row{transition:.15s;background:var(--surface-2)}
+  .row:hover{border-color:var(--border-hi)}
+  .cell{border-radius:12px;transition:.15s}
+  .cell:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.4)}
+  .grid::-webkit-scrollbar,.log::-webkit-scrollbar{width:9px}
+  .grid::-webkit-scrollbar-thumb,.log::-webkit-scrollbar-thumb{
+    background:var(--surface-3);border-radius:9px}
+
+  /* ---- per-feed violation log ---- */
+  .vlog{border-top:1px solid var(--border)}
+  .vtoggle{width:100%;display:flex;align-items:center;gap:9px;background:none;
+    border:none;color:var(--muted);padding:11px 14px;font-size:12px;cursor:pointer;
+    font-family:inherit;text-align:left;transition:.15s}
+  .vtoggle:hover{color:var(--txt);background:rgba(255,255,255,.025)}
+  .vtoggle .cnt{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,93,108,.3);
+    border-radius:20px;padding:2px 9px;font-size:10px;font-weight:800}
+  .vtoggle .cnt.zero{background:var(--surface-3);color:var(--faint);border-color:var(--border)}
+  .vtoggle .chev{margin-left:auto;transition:transform .18s;font-size:10px}
+  .vlog.open .chev{transform:rotate(180deg)}
+  .vitems{display:none;max-height:270px;overflow-y:auto;padding:0 10px 10px}
+  .vlog.open .vitems{display:block}
+  .vitems::-webkit-scrollbar{width:8px}
+  .vitems::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:8px}
+  .vrow{display:flex;gap:9px;align-items:center;padding:7px;border-radius:9px;
+    border:1px solid var(--border);margin-bottom:6px;background:var(--panel);
+    cursor:pointer;transition:.15s}
+  .vrow:hover{border-color:var(--accent)}
+  .vrow img{width:52px;height:40px;object-fit:cover;border-radius:6px;background:#000;flex:none}
+  .vrow .vmeta{min-width:0;flex:1}
+  .vrow .vt{font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;
+    letter-spacing:.03em}
+  .vrow .vs{font-size:10.5px;color:var(--faint);margin-top:2px}
+  .vempty{font-size:11.5px;color:var(--faint);padding:14px 6px;text-align:center}
+
+  /* ---- confirm dialog + toast ---- */
+  .dlg{position:fixed;inset:0;background:rgba(5,7,12,.72);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;z-index:70;padding:20px}
+  .dlg.open{display:flex}
+  .dlg-box{background:var(--panel);border:1px solid var(--border-hi);border-radius:16px;
+    padding:24px;width:400px;max-width:100%;box-shadow:var(--shadow)}
+  .dlg-box h3{margin:0 0 8px;font-size:16px;font-weight:650}
+  .dlg-box .sub{font-size:12.5px;color:var(--muted);line-height:1.55}
+  .dlg-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:22px}
+  .dlg-actions button{background:var(--surface-2);border:1px solid var(--border);
+    color:var(--txt);border-radius:9px;padding:9px 15px;font-size:12.5px;cursor:pointer}
+  .dlg-actions button:hover{border-color:var(--border-hi)}
+  .dlg-actions button.go{background:var(--red);border-color:var(--red);color:#fff;font-weight:600}
+  #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);
+    background:var(--surface-2);border:1px solid var(--border-hi);border-radius:11px;
+    padding:12px 20px;font-size:13px;box-shadow:var(--shadow);z-index:95;opacity:0;
+    transition:.28s cubic-bezier(.2,.9,.3,1.1);pointer-events:none;max-width:90vw}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.ok{border-color:rgba(61,220,132,.45)}
+  #toast.err{border-color:rgba(255,93,108,.5)}
+
+  /* ---- responsive ---- */
+  @media(max-width:1000px){
+    main{grid-template-columns:1fr;padding:14px 16px;gap:14px}
+  }
+  @media(max-width:760px){
+    header{padding:12px 14px;gap:10px}
+    header h1{font-size:15px;width:100%}
+    .stats{margin-left:0;width:100%;gap:8px}
+    .stat{flex:1;min-width:0;padding:8px 6px;text-align:center}
+    .stat .n{font-size:19px}
+    .stat .l{font-size:9px}
+    .who{width:100%;padding-left:0;margin-left:0;border-left:none;
+      border-top:1px solid var(--border);padding-top:11px;flex-wrap:wrap;gap:8px}
+    .who .u{margin-left:auto}
+    main{padding:12px;gap:12px}
+    .feeds{grid-template-columns:1fr;gap:12px}
+    .controls{gap:6px;padding:9px}
+    .controls button{flex:1;min-width:44px;padding:10px 8px;font-size:15px}
+    .panel{padding:14px}
+    .log{max-height:none}
+    .modal{padding:16px;border-radius:14px}
+    .wide{width:100%}
+    .filters{gap:8px}
+    .filters > div{flex:1;min-width:130px}
+    .filters select,.filters input{width:100%}
+    .grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));max-height:52vh}
+    .cell img{height:96px}
+    .lightbox img{max-width:94vw;max-height:64vh}
+    .lbbar{flex-wrap:wrap;justify-content:center;padding:0 14px;text-align:center}
+  }
 </style>
 </head>
 <body>
@@ -80,16 +242,78 @@
     <div class="stat alert"><div class="n" id="s-today">0</div><div class="l">Today</div></div>
     <div class="stat"><div class="n" id="s-feeds">0</div><div class="l">Feeds</div></div>
   </div>
+  <div class="who">
+    <button class="hbtn" id="open-gallery">🖼️ Snapshots</button>
+    <a class="hbtn" id="admin-link" href="/admin" style="display:none">👥 Users</a>
+    <span class="u" id="me-user">…</span>
+    <span class="r" id="me-role"></span>
+    <a class="hbtn" href="/logout">Log out</a>
+  </div>
 </header>
 <main>
   <div>
     <div class="feeds" id="feeds"></div>
   </div>
   <div class="panel">
-    <h2>Violations Log <a class="dl" href="/export.csv">Export CSV</a></h2>
+    <h2>All Feeds — Recent <a class="dl" href="/export.csv">Export CSV</a></h2>
     <div class="log" id="log"></div>
   </div>
 </main>
+
+<div class="overlay" id="gal-overlay">
+  <div class="modal wide">
+    <h2 style="display:flex;align-items:center">Violation Snapshots
+      <button class="hbtn" id="gal-close" style="margin-left:auto">Close</button></h2>
+
+    <div class="filters">
+      <div>
+        <label>Feed</label>
+        <select id="g-feed"><option value="">All feeds</option></select>
+      </div>
+      <div>
+        <label>Violation</label>
+        <select id="g-type">
+          <option value="">All types</option>
+          <option value="no_helmet">No helmet</option>
+          <option value="no_vest">No vest</option>
+        </select>
+      </div>
+      <div><label>From</label><input type="date" id="g-from"></div>
+      <div><label>To</label><input type="date" id="g-to"></div>
+      <div><label>&nbsp;</label><button class="hbtn" id="g-clear">Clear</button></div>
+    </div>
+
+    <div class="grid" id="g-grid"></div>
+
+    <div class="pager">
+      <button id="g-prev">← Prev</button>
+      <button id="g-next">Next →</button>
+      <span id="g-count"></span>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <img id="lb-img" src="" alt="">
+  <div class="lbbar">
+    <span id="lb-cap"></span>
+    <a id="lb-dl" href="" download>⬇ Download</a>
+    <button id="lb-close">Close</button>
+  </div>
+</div>
+
+<div class="dlg" id="dlg-rm">
+  <div class="dlg-box">
+    <h3>Remove feed</h3>
+    <div class="sub" id="rm-sub"></div>
+    <div class="dlg-actions">
+      <button data-close>Cancel</button>
+      <button class="go" id="rm-go">Remove feed</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
 
 <div class="overlay" id="overlay">
   <div class="modal">
@@ -101,7 +325,8 @@
     <label>Source type</label>
     <div class="type-tabs">
       <button type="button" data-type="camera" class="active">📷 Camera</button>
-      <button type="button" data-type="video">🎞️ Video File</button>
+      <button type="button" data-type="video">🎞️ Video</button>
+      <button type="button" data-type="cctv">🎥 CCTV</button>
       <button type="button" data-type="rtsp">🌐 RTSP</button>
     </div>
 
@@ -117,6 +342,46 @@
       <div class="hint">Uploaded to the server and looped automatically.</div>
     </div>
 
+    <div id="fields-cctv" style="display:none">
+      <label>Camera / DVR type</label>
+      <select id="c-brand"></select>
+      <div class="hint" id="c-brandhint">Analog cameras have no IP of their own —
+        pick your DVR's brand and use the channel number.</div>
+
+      <div class="res-row" style="margin-top:4px">
+        <div style="flex:2"><label>IP address</label>
+          <input type="text" id="c-ip" placeholder="192.168.1.64"></div>
+        <div><label>Port</label><input type="number" id="c-port" placeholder="554"></div>
+      </div>
+
+      <div class="res-row">
+        <div><label>Username</label>
+          <input type="text" id="c-user" placeholder="admin" autocomplete="off"></div>
+        <div><label>Password</label>
+          <input type="password" id="c-pass" autocomplete="new-password"></div>
+      </div>
+
+      <div class="res-row" id="c-chan-row">
+        <div><label>Channel</label>
+          <input type="number" id="c-chan" value="1" min="1" step="1"></div>
+        <div><label>Quality</label>
+          <select id="c-stream">
+            <option value="sub">Sub-stream — recommended</option>
+            <option value="main">Main stream — full res, heavy</option>
+          </select></div>
+      </div>
+
+      <div id="c-path-row" style="display:none">
+        <label>Stream path</label>
+        <input type="text" id="c-path" placeholder="/h264_ulaw.sdp">
+      </div>
+
+      <label>Resulting URL</label>
+      <div class="urlbox" id="c-preview">—</div>
+      <div class="hint">Tip: test this in VLC first (Media → Open Network Stream).
+        If VLC plays it, this will too.</div>
+    </div>
+
     <div id="fields-rtsp" style="display:none">
       <label>RTSP URL</label>
       <input type="text" id="f-rtsp" placeholder="rtsp://user:pass@192.168.1.50:554/stream1">
@@ -127,6 +392,10 @@
       <div><input type="number" id="f-width" placeholder="Width"></div>
       <div><input type="number" id="f-height" placeholder="Height"></div>
     </div>
+
+    <label>Detection model</label>
+    <select id="f-model"></select>
+    <div class="hint" id="f-modelhint"></div>
 
     <div class="err" id="f-err"></div>
     <div class="actions">
@@ -141,18 +410,46 @@ const feedsEl = document.getElementById('feeds');
 const feedState = {};                 // name -> {speed, zoom, tx, ty, paused}
 const SPEEDS = [0.25, 0.5, 1, 2, 4];  // slow <-> fast-forward steps
 let currentType = 'camera';
+let ME = {username:'', role:'user', is_admin:false};
+let VLOG = {};                        // feed name -> {items, total, today}
+let MODELS = [];                      // [{id,label,hint,available,default}]
+
+// ---- detection models ------------------------------------------------------
+// Which net a feed runs on is a per-feed choice: a close-range camera at a gate
+// and a wide yard shot want different models. Loaded once and reused by the
+// add-feed dialog and by the picker on every tile.
+async function loadModels(){
+  try{ MODELS = await (await fetch('/api/models')).json(); }
+  catch(e){ return; }
+  const sel = document.getElementById('f-model');
+  sel.innerHTML = modelOptions(null);
+  onModelChange();
+}
+
+function modelOptions(selected){
+  const usable = MODELS.filter(m=>m.available);
+  if(!usable.length) return '<option value="">Default</option>';
+  const pick = selected || (usable.find(m=>m.default) || usable[0]).id;
+  return usable.map(m=>
+    `<option value="${escAttr(m.id)}"${m.id===pick?' selected':''}>${escHtml(m.label)}</option>`
+  ).join('');
+}
+
+function onModelChange(){
+  const id = document.getElementById('f-model').value;
+  const m = MODELS.find(x=>x.id === id);
+  document.getElementById('f-modelhint').textContent = m ? m.hint : '';
+}
 
 // ---- feed tile markup ------------------------------------------------------
+// Playback controls change the SHARED server-side worker (pausing a feed stops
+// detection for everyone), so they are admin-only. Zoom / fullscreen / save
+// are browser-only and available to every user.
 function feedTileHTML(f){
   const name = f.name;
   const fh = f.is_file ? '' : 'style="display:none"';   // file-only controls
-  return `<h3><span><span class="dot"></span>${name}</span>
-    <button class="rm" title="Remove feed" onclick="removeFeed('${name}')">×</button></h3>
-    <div class="viewport">
-      <img class="stream" src="/stream/${encodeURIComponent(name)}" alt="${name}" draggable="false">
-      <div class="speed-badge" data-role="speed"></div>
-    </div>
-    <div class="controls">
+  const admin = ME.is_admin;
+  const play = !admin ? '' : `
       <button ${fh} title="Restart" data-act="restart">⏮</button>
       <button ${fh} title="Back 5s" data-act="seek" data-val="-5">⏪</button>
       <button title="Play / Pause" data-act="toggle" data-role="pp">⏸</button>
@@ -161,12 +458,32 @@ function feedTileHTML(f){
       <span class="sep" ${fh}></span>
       <button ${fh} title="Slower" data-act="slow">🐢</button>
       <button ${fh} title="Faster" data-act="fast">🐇</button>
-      <span class="sep"></span>
+      <span class="sep"></span>`;
+  const rm = !admin ? '' :
+    `<button class="rm" title="Remove feed" onclick="removeFeed('${jsq(name)}')">×</button>`;
+  // Switching the model reloads weights for this feed only; like the playback
+  // controls it changes the shared worker, so admins only.
+  const modelSel = !admin ? '' : `
+      <select data-role="model" title="Detection model">${modelOptions(f.model)}</select>`;
+  return `<h3><span><span class="dot"></span>${escHtml(name)}</span>${rm}</h3>
+    <div class="viewport">
+      <img class="stream" src="/stream/${encodeURIComponent(name)}" alt="${escAttr(name)}" draggable="false">
+      <div class="speed-badge" data-role="speed"></div>
+    </div>
+    <div class="controls">${play}
       <button title="Zoom out" data-zoom="-1">🔍−</button>
       <button title="Zoom in" data-zoom="1">🔍+</button>
       <button title="Reset view" data-zoom="0">⟲</button>
       <button title="Fullscreen" data-fs>⛶</button>
-      <button title="Save snapshot" data-snap>📷</button>
+      <button title="Save snapshot" data-snap>📷</button>${modelSel}
+    </div>
+    <div class="vlog" data-role="vlog">
+      <button class="vtoggle" data-vtoggle>
+        <span>⚠️ Violations</span>
+        <span class="cnt zero" data-role="vcount">0</span>
+        <span class="chev">▼</span>
+      </button>
+      <div class="vitems" data-role="vitems"></div>
     </div>`;
 }
 
@@ -198,8 +515,13 @@ async function loadFeeds(){
       d.dataset.name = f.name;
       d.innerHTML = feedTileHTML(f);
       feedsEl.insertBefore(d, addTile);
-      if(!feedState[f.name]) feedState[f.name] = {speed:f.speed||1, zoom:1, tx:0, ty:0, paused:!!f.paused};
+      if(!feedState[f.name]) feedState[f.name] = {speed:f.speed||1, zoom:1, tx:0, ty:0,
+                                                 paused:!!f.paused, vlogOpen:false};
       attachPan(d);
+      // restore the expanded/collapsed state of this feed's violation log
+      if(feedState[f.name].vlogOpen)
+        d.querySelector('[data-role="vlog"]').classList.add('open');
+      renderVlog(d, VLOG);
     }
     updateFeedUI(d, f);
   });
@@ -212,6 +534,10 @@ function updateFeedUI(d, f){
   if(typeof f.speed === 'number') s.speed = f.speed;
   const pp = d.querySelector('[data-role="pp"]');
   if(pp) pp.textContent = s.paused ? '▶' : '⏸';
+  // don't fight the user mid-selection: only sync while the picker is idle
+  const msel = d.querySelector('[data-role="model"]');
+  if(msel && f.model && !msel.disabled && document.activeElement !== msel)
+    msel.value = f.model;
   const badge = d.querySelector('[data-role="speed"]');
   if(badge){
     if(f.is_file && s.speed !== 1){ badge.style.display = 'block'; badge.textContent = s.speed + '×'; }
@@ -219,12 +545,70 @@ function updateFeedUI(d, f){
   }
 }
 
-async function removeFeed(name){
-  if(!confirm(`Remove feed "${name}"? This stops the camera/video and its live tile.`)) return;
-  await fetch('/api/feeds/' + encodeURIComponent(name), {method:'DELETE'});
-  delete feedState[name];
-  loadFeeds();
+// ---- per-feed violation log ------------------------------------------------
+// Each tile shows the violations recorded by that camera only. One shared
+// request fetches them grouped by feed, so adding cameras doesn't multiply
+// the number of API calls.
+function toggleVlog(d){
+  const box = d.querySelector('[data-role="vlog"]');
+  const open = box.classList.toggle('open');
+  const s = feedState[d.dataset.name];
+  if(s) s.vlogOpen = open;              // remember across refreshes
 }
+
+function renderVlog(d, data){
+  const name = d.dataset.name;
+  const cnt = d.querySelector('[data-role="vcount"]');
+  const box = d.querySelector('[data-role="vitems"]');
+  if(!cnt || !box) return;
+
+  const info = (data && data[name]) || {total:0, today:0, items:[]};
+  cnt.textContent = info.today ? `${info.today} today` : (info.total || 0);
+  cnt.className = 'cnt' + (info.today ? '' : ' zero');
+  d.querySelector('.vtoggle span').textContent =
+    info.total ? `⚠️ Violations · ${info.total} total` : '⚠️ Violations';
+
+  box.innerHTML = info.items.length ? info.items.map(v=>`
+    <div class="vrow" onclick="lbOpen('/${jsq(v.snapshot)}','${jsq(v.violation.replace(/_/g,' ') + ' · ' + v.feed_name + ' · ' + v.date + ' ' + v.time)}')">
+      ${v.snapshot?`<img src="/${escAttr(v.snapshot)}" loading="lazy" onerror="this.style.opacity=.15">`:''}
+      <div class="vmeta">
+        <div class="vt">${escHtml(v.violation.replace(/_/g,' '))}</div>
+        <div class="vs">ID ${v.track_id ?? '—'} · ${Math.round(v.confidence*100)}% · ${v.time}</div>
+        <div class="vs">${v.date}</div>
+      </div>
+    </div>`).join('')
+    : '<div class="vempty">No violations recorded on this feed yet.</div>';
+}
+
+// ---- toast + confirm dialog ------------------------------------------------
+function toast(msg, kind){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + (kind || '');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>{ t.className = kind || ''; }, 2800);
+}
+
+let rmTarget = null;
+function removeFeed(name){
+  rmTarget = name;
+  document.getElementById('rm-sub').innerHTML =
+    `Stop <b>${escHtml(name)}</b> and remove its tile?<br>` +
+    `Detection stops for this feed. Past violations and snapshots are kept.`;
+  document.getElementById('dlg-rm').classList.add('open');
+}
+document.getElementById('rm-go').onclick = async () => {
+  document.getElementById('dlg-rm').classList.remove('open');
+  const r = await fetch('/api/feeds/' + encodeURIComponent(rmTarget), {method:'DELETE'});
+  toast(r.ok ? `Removed "${rmTarget}".` : 'Could not remove feed.', r.ok ? 'ok' : 'err');
+  delete feedState[rmTarget];
+  loadFeeds();
+};
+document.querySelectorAll('.dlg').forEach(d=>{
+  d.addEventListener('click', e=>{
+    if(e.target === d || e.target.hasAttribute('data-close')) d.classList.remove('open');
+  });
+});
 
 // ---- control-bar clicks (event delegation) --------------------------------
 feedsEl.addEventListener('click', async (e)=>{
@@ -233,6 +617,7 @@ feedsEl.addEventListener('click', async (e)=>{
   const name = d.dataset.name;
   if(btn.classList.contains('rm')) return;                 // handled inline
 
+  if(btn.hasAttribute('data-vtoggle')){ toggleVlog(d); return; }
   if(btn.dataset.zoom !== undefined){ zoom(d, +btn.dataset.zoom); return; }
   if(btn.hasAttribute('data-fs')){ fullscreen(d.querySelector('.viewport')); return; }
   if(btn.hasAttribute('data-snap')){ snapshot(name, d.querySelector('img.stream')); return; }
@@ -245,6 +630,30 @@ feedsEl.addEventListener('click', async (e)=>{
   const st = await postControl(name, body);
   if(st) updateFeedUI(d, {name, ...st});
 });
+
+// Model picker on a tile. Swapping reloads weights server-side (a second or
+// two) and resets that feed's track IDs, so it is a change event, not a poll.
+feedsEl.addEventListener('change', async (e)=>{
+  const sel = e.target.closest('select[data-role="model"]'); if(!sel) return;
+  const d = sel.closest('.feed'); if(!d) return;
+  const name = d.dataset.name;
+  const want = sel.value;
+  sel.disabled = true;
+  const st = await postControl(name, {action:'model', value: want});
+  sel.disabled = false;
+  if(st){
+    toast(`"${name}" now using the ${modelLabel(want)} model.`, 'ok');
+    updateFeedUI(d, {name, ...st});
+  }else{
+    toast('Could not switch model.', 'err');
+    loadFeeds();                       // put the picker back to the truth
+  }
+});
+
+function modelLabel(id){
+  const m = MODELS.find(x=>x.id === id);
+  return m ? m.label.toLowerCase() : id;
+}
 
 async function postControl(name, body){
   try{
@@ -300,6 +709,37 @@ function attachPan(d){
   d.querySelector('.viewport').addEventListener('wheel', e=>{
     e.preventDefault(); zoom(d, e.deltaY < 0 ? 1 : -1);
   }, {passive:false});
+
+  // ---- touch: one finger pans (when zoomed), two fingers pinch-zoom -------
+  const gap = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  let pinchStart = 0, zoomStart = 1, panning = false, px = 0, py = 0;
+
+  img.addEventListener('touchstart', e=>{
+    const s = feedState[d.dataset.name];
+    if(e.touches.length === 2){
+      pinchStart = gap(e.touches); zoomStart = s.zoom; panning = false;
+    }else if(e.touches.length === 1 && s.zoom > 1){
+      panning = true; px = e.touches[0].clientX - s.tx; py = e.touches[0].clientY - s.ty;
+    }
+  }, {passive:true});
+
+  img.addEventListener('touchmove', e=>{
+    const s = feedState[d.dataset.name];
+    if(e.touches.length === 2 && pinchStart){
+      s.zoom = Math.min(6, Math.max(1, +(zoomStart * gap(e.touches) / pinchStart).toFixed(2)));
+      if(s.zoom <= 1){ s.zoom = 1; s.tx = 0; s.ty = 0; }
+      applyTransform(d);
+      e.preventDefault();                  // stop the page pinch-zooming too
+    }else if(panning && e.touches.length === 1){
+      s.tx = e.touches[0].clientX - px; s.ty = e.touches[0].clientY - py;
+      applyTransform(d);
+      e.preventDefault();                  // stop the page scrolling while panning
+    }
+  }, {passive:false});
+
+  const endTouch = ()=>{ panning = false; pinchStart = 0; };
+  img.addEventListener('touchend', endTouch);
+  img.addEventListener('touchcancel', endTouch);
 }
 
 function fullscreen(el){
@@ -317,7 +757,8 @@ function snapshot(name, img){
     a.download = `${name}_${Date.now()}.png`;
     a.href = c.toDataURL('image/png');
     a.click();
-  }catch(e){ alert('Snapshot failed: ' + e.message); }
+    toast('Frame saved to your downloads.', 'ok');
+  }catch(e){ toast('Could not save this frame.', 'err'); }
 }
 
 // ---- add-feed modal --------------------------------------------------------
@@ -340,8 +781,85 @@ document.querySelectorAll('.type-tabs button').forEach(btn=>{
     currentType = btn.dataset.type;
     document.getElementById('fields-camera').style.display = currentType==='camera' ? '' : 'none';
     document.getElementById('fields-video').style.display  = currentType==='video'  ? '' : 'none';
+    document.getElementById('fields-cctv').style.display   = currentType==='cctv'   ? '' : 'none';
     document.getElementById('fields-rtsp').style.display   = currentType==='rtsp'   ? '' : 'none';
   };
+});
+
+// ---- CCTV tab --------------------------------------------------------------
+// Mirrors the server-side builder in cctv.py so you can see the URL you are
+// about to create. The server rebuilds it for real -- this is just a preview.
+let PRESETS = [];
+
+async function loadPresets(){
+  try{ PRESETS = await (await fetch('/api/cctv/presets')).json(); }
+  catch(e){ return; }
+  const sel = document.getElementById('c-brand');
+  sel.innerHTML = PRESETS.map(p=>`<option value="${p.id}">${escHtml(p.label)}</option>`).join('')
+    + '<option value="onvif">ONVIF auto-detect (asks the device)</option>';
+  onBrandChange();
+}
+
+function brandInfo(id){ return PRESETS.find(p=>p.id === id) || null; }
+
+function onBrandChange(){
+  const id = document.getElementById('c-brand').value;
+  const p = brandInfo(id);
+  const isOnvif = id === 'onvif';
+  document.getElementById('c-chan-row').style.display = (p && p.channels) ? '' : 'none';
+  document.getElementById('c-path-row').style.display = (p && p.custom) ? '' : 'none';
+  const portEl = document.getElementById('c-port');
+  portEl.placeholder = isOnvif ? '80' : (p ? p.port : 554);
+  document.getElementById('c-brandhint').textContent = isOnvif
+    ? 'Asks the camera for its own stream URL. Needs: pip install onvif-zeep'
+    : (p && p.channels
+        ? "Analog cameras have no IP of their own — use the DVR's IP and the camera's channel number."
+        : 'No channel needed for this device.');
+  cctvPreview();
+}
+
+function cctvPreview(){
+  const box = document.getElementById('c-preview');
+  const id = document.getElementById('c-brand').value;
+  const ip = document.getElementById('c-ip').value.trim();
+  if(!ip){ box.className = 'urlbox bad'; box.textContent = 'Enter an IP address…'; return; }
+  if(id === 'onvif'){
+    box.className = 'urlbox bad';
+    box.textContent = 'The device will be asked for its stream URL when you add it.';
+    return;
+  }
+  const p = brandInfo(id); if(!p) return;
+  const port = document.getElementById('c-port').value.trim() || p.port;
+  const user = document.getElementById('c-user').value.trim();
+  const pw   = document.getElementById('c-pass').value;
+  const ch   = parseInt(document.getElementById('c-chan').value || '1', 10);
+  const main = document.getElementById('c-stream').value === 'main';
+  const cred = user ? (user + (pw ? ':****' : '') + '@') : '';
+
+  let path;
+  if(p.custom){
+    path = document.getElementById('c-path').value.trim();
+    if(path && !path.startsWith('/')) path = '/' + path;
+    if(!path){ box.className='urlbox bad'; box.textContent='Enter the stream path…'; return; }
+  }else if(id === 'hikvision'){
+    path = `/Streaming/Channels/${ch}${main?'01':'02'}`;
+  }else if(id === 'dahua'){
+    path = `/cam/realmonitor?channel=${ch}&subtype=${main?0:1}`;
+  }else if(id === 'uniview'){
+    path = `/media/video${ch}`;
+  }else{
+    path = id === 'ipwebcam_mjpeg' ? '/video' : '/h264_ulaw.sdp';
+  }
+  const scheme = id === 'ipwebcam_mjpeg' ? 'http' : 'rtsp';
+  box.className = 'urlbox';
+  box.textContent = `${scheme}://${cred}${ip}:${port}${path}`;
+}
+
+document.getElementById('f-model').onchange = onModelChange;
+document.getElementById('c-brand').onchange = onBrandChange;
+['c-ip','c-port','c-user','c-pass','c-chan','c-stream','c-path'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', cctvPreview);
+  document.getElementById(id).addEventListener('change', cctvPreview);
 });
 
 document.getElementById('f-submit').onclick = async () => {
@@ -355,6 +873,7 @@ document.getElementById('f-submit').onclick = async () => {
   fd.append('source_type', currentType);
   fd.append('width', document.getElementById('f-width').value);
   fd.append('height', document.getElementById('f-height').value);
+  fd.append('model', document.getElementById('f-model').value);
 
   if(currentType === 'camera'){
     fd.append('camera_index', document.getElementById('f-camera-index').value || '0');
@@ -366,6 +885,17 @@ document.getElementById('f-submit').onclick = async () => {
     const file = document.getElementById('f-video').files[0];
     if(!file){ errEl.textContent = 'Please choose a video file.'; return; }
     fd.append('video', file);
+  } else if(currentType === 'cctv'){
+    const ip = document.getElementById('c-ip').value.trim();
+    if(!ip){ errEl.textContent = 'IP address is required.'; return; }
+    fd.append('brand',    document.getElementById('c-brand').value);
+    fd.append('ip',       ip);
+    fd.append('port',     document.getElementById('c-port').value.trim());
+    fd.append('username', document.getElementById('c-user').value.trim());
+    fd.append('password', document.getElementById('c-pass').value);
+    fd.append('channel',  document.getElementById('c-chan').value || '1');
+    fd.append('stream',   document.getElementById('c-stream').value);
+    fd.append('custom_path', document.getElementById('c-path').value.trim());
   }
 
   const submitBtn = document.getElementById('f-submit');
@@ -387,13 +917,23 @@ document.getElementById('f-submit').onclick = async () => {
 // ---- stats + violations log ------------------------------------------------
 async function refresh(){
   try{
-    const st = await (await fetch('/api/stats')).json();
+    const rs = await fetch('/api/stats');
+    if(rs.status === 401){ location.href = '/login'; return; }
+    const st = await rs.json();
     document.getElementById('s-total').textContent = st.total;
     document.getElementById('s-today').textContent = st.today;
+
+    // per-feed logs (one request, grouped by camera)
+    try{
+      VLOG = await (await fetch('/api/violations/by-feed')).json();
+      feedsEl.querySelectorAll('.feed').forEach(d=>renderVlog(d, VLOG));
+    }catch(e){}
+
     const vs = await (await fetch('/api/violations')).json();
     const log = document.getElementById('log');
     log.innerHTML = vs.map(v=>`
-      <div class="row">
+      <div class="row" style="cursor:${v.snapshot?'pointer':'default'}"
+           ${v.snapshot?`onclick="lbOpen('/${jsq(v.snapshot)}','${jsq(v.violation.replace(/_/g,' ') + ' · ' + v.feed_name + ' · ' + v.date + ' ' + v.time)}')"`:''}>
         ${v.snapshot?`<img src="/${v.snapshot}" onerror="this.style.display='none'">`:''}
         <div class="meta">
           <span class="badge">${v.violation.replace(/_/g,' ')}</span>
@@ -404,11 +944,132 @@ async function refresh(){
   }catch(e){console.error(e)}
 }
 
-renderAddTile();
-loadFeeds();
-refresh();
-setInterval(refresh, 3000);
-setInterval(loadFeeds, 8000);
+// ---- snapshot gallery ------------------------------------------------------
+const GAL = {limit: 60, offset: 0, total: 0};
+
+function galOpen(){
+  document.getElementById('gal-overlay').classList.add('open');
+  // populate the feed filter from the feeds this user can actually see
+  const sel = document.getElementById('g-feed');
+  const cur = sel.value;
+  const names = [...feedsEl.querySelectorAll('.feed')].map(e=>e.dataset.name);
+  sel.innerHTML = '<option value="">All feeds</option>' +
+    names.map(n=>`<option value="${escAttr(n)}">${escHtml(n)}</option>`).join('');
+  sel.value = cur;
+  GAL.offset = 0;
+  galLoad();
+}
+function galClose(){ document.getElementById('gal-overlay').classList.remove('open'); }
+
+function escHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escAttr(s){ return escHtml(s); }
+
+// Safe to drop inside  onclick="fn('...')"  -- escapes for the JS string
+// literal FIRST (backslash, quote), then for the HTML attribute.
+function jsq(s){
+  return String(s)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;');
+}
+
+async function galLoad(){
+  const q = new URLSearchParams({limit: GAL.limit, offset: GAL.offset});
+  const feed = document.getElementById('g-feed').value;
+  const type = document.getElementById('g-type').value;
+  const from = document.getElementById('g-from').value;
+  const to   = document.getElementById('g-to').value;
+  if(feed) q.set('feed', feed);
+  if(type) q.set('violation', type);
+  if(from) q.set('from', from);
+  if(to)   q.set('to', to);
+
+  const grid = document.getElementById('g-grid');
+  grid.innerHTML = '<div class="sub" style="color:var(--muted);font-size:12px">Loading…</div>';
+  let d;
+  try{ const r = await fetch('/api/snapshots?' + q); if(!r.ok) throw 0; d = await r.json(); }
+  catch(e){ grid.innerHTML = '<div style="color:var(--red);font-size:12px">Could not load snapshots.</div>'; return; }
+
+  GAL.total = d.total;
+  grid.innerHTML = d.items.map(v=>`
+    <div class="cell" onclick="lbOpen('/${jsq(v.snapshot)}','${jsq(v.violation.replace(/_/g,' ') + ' · ' + v.feed_name + ' · ' + v.date + ' ' + v.time)}')">
+      <img src="/${v.snapshot}" loading="lazy" onerror="this.style.opacity=.2">
+      <div class="cap"><b>${escHtml(v.violation.replace(/_/g,' '))}</b><br>
+        ${escHtml(v.feed_name)}<br>${v.date} ${v.time}</div>
+    </div>`).join('') ||
+    '<div style="color:var(--muted);font-size:12px">No snapshots match these filters.</div>';
+
+  const from_n = d.total ? GAL.offset + 1 : 0;
+  const to_n = Math.min(GAL.offset + GAL.limit, d.total);
+  document.getElementById('g-count').textContent = `${from_n}–${to_n} of ${d.total}`;
+  document.getElementById('g-prev').disabled = GAL.offset <= 0;
+  document.getElementById('g-next').disabled = GAL.offset + GAL.limit >= d.total;
+}
+
+document.getElementById('open-gallery').onclick = galOpen;
+document.getElementById('gal-close').onclick = galClose;
+document.getElementById('gal-overlay').addEventListener('click', e=>{
+  if(e.target.id === 'gal-overlay') galClose();
+});
+['g-feed','g-type','g-from','g-to'].forEach(id=>{
+  document.getElementById(id).onchange = ()=>{ GAL.offset = 0; galLoad(); };
+});
+document.getElementById('g-clear').onclick = ()=>{
+  ['g-feed','g-type','g-from','g-to'].forEach(id=>document.getElementById(id).value='');
+  GAL.offset = 0; galLoad();
+};
+document.getElementById('g-prev').onclick = ()=>{ GAL.offset = Math.max(0, GAL.offset - GAL.limit); galLoad(); };
+document.getElementById('g-next').onclick = ()=>{ GAL.offset += GAL.limit; galLoad(); };
+
+// ---- lightbox --------------------------------------------------------------
+function lbOpen(src, caption){
+  document.getElementById('lb-img').src = src;
+  document.getElementById('lb-dl').href = src;
+  document.getElementById('lb-cap').textContent = caption || '';
+  document.getElementById('lightbox').classList.add('open');
+}
+function lbClose(){ document.getElementById('lightbox').classList.remove('open'); }
+document.getElementById('lb-close').onclick = lbClose;
+document.getElementById('lightbox').addEventListener('click', e=>{
+  if(e.target.id === 'lightbox') lbClose();
+});
+document.addEventListener('keydown', e=>{
+  if(e.key !== 'Escape') return;
+  const dlg = document.querySelector('.dlg.open');
+  if(dlg) dlg.classList.remove('open');
+  else if(document.getElementById('lightbox').classList.contains('open')) lbClose();
+  else if(document.getElementById('gal-overlay').classList.contains('open')) galClose();
+  else if(document.getElementById('overlay').classList.contains('open')) closeModal();
+});
+
+// ---- startup ---------------------------------------------------------------
+async function init(){
+  try{
+    const r = await fetch('/api/me');
+    if(r.status === 401){ location.href = '/login'; return; }
+    ME = await r.json();
+  }catch(e){ location.href = '/login'; return; }
+
+  document.getElementById('me-user').textContent = ME.username;
+  const role = document.getElementById('me-role');
+  role.textContent = ME.role;
+  role.className = 'r' + (ME.is_admin ? ' admin' : '');
+  if(ME.is_admin){
+    document.getElementById('admin-link').style.display = '';
+    renderAddTile();                 // only admins may add feeds
+    loadPresets();                   // CCTV brand list
+    await loadModels();              // before loadFeeds: tiles render a picker
+  }
+
+  loadFeeds();
+  refresh();
+  setInterval(refresh, 3000);
+  setInterval(loadFeeds, 8000);
+}
+
+init();
 </script>
 </body>
 </html>

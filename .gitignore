@@ -1,0 +1,35 @@
+# Secrets -- never commit
+.secret_key
+_secret_key
+*.pem
+*.key
+
+# Database / runtime data
+violations.db
+*.db
+*.sqlite3
+
+# Media captured at runtime
+snapshots/
+uploads/
+
+# Model weights (large binaries -- distribute separately / via releases or Git LFS)
+*.pt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local overrides
+feeds.local.json

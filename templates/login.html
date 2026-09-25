@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · PPE Monitoring</title>
+<style>
+  :root{
+    --bg:#0a0d14; --panel:#121826; --surface-2:#1a2233;
+    --border:#232c3f; --border-hi:#37435f;
+    --txt:#eaeff8; --muted:#8b96ad; --faint:#5d6880;
+    --accent:#5b8dff; --accent-2:#3a6fe0; --red:#ff5d6c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:20px;color:var(--txt);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);
+    background-image:radial-gradient(900px 480px at 50% -12%, #1c2c52 0%, transparent 62%)}
+  .card{background:var(--panel);border:1px solid var(--border-hi);border-radius:18px;
+    padding:34px 30px;width:370px;max-width:100%;
+    box-shadow:0 18px 50px rgba(0,0,0,.55)}
+  h1{font-size:20px;margin:0 0 6px;display:flex;align-items:center;gap:9px;
+    font-weight:680;letter-spacing:-.01em}
+  .sub{font-size:12.5px;color:var(--muted);margin-bottom:24px;line-height:1.5}
+  label{display:block;font-size:11.5px;color:var(--muted);margin:16px 0 7px;font-weight:500}
+  input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;
+    color:var(--txt);padding:12px 13px;font-size:14px;transition:.15s;font-family:inherit}
+  input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,141,255,.16)}
+  button{width:100%;margin-top:26px;background:var(--accent);border:none;color:#fff;
+    padding:12px;border-radius:10px;font-size:14px;font-weight:650;cursor:pointer;transition:.15s}
+  button:hover{background:var(--accent-2)}
+  button:active{transform:translateY(1px)}
+  .err{color:var(--red);font-size:12px;margin-top:14px;text-align:center;min-height:16px}
+</style>
+</head>
+<body>
+  <form class="card" method="POST">
+    <h1>🦺 PPE Monitoring</h1>
+    <div class="sub">Sign in to view your assigned feeds.</div>
+
+    <label for="u">Username</label>
+    <input id="u" name="username" autocomplete="username" autofocus required>
+
+    <label for="p">Password</label>
+    <input id="p" name="password" type="password" autocomplete="current-password" required>
+
+    <button type="submit">Sign in</button>
+    <div class="err">{{ error or "" }}</div>
+  </form>
+</body>
+</html>

@@ -94,6 +94,28 @@ authorized to scan.
   `mask_url()` ensures raw stream URLs (with embedded passwords) are never
   sent to the browser.
 
+## Dashboard screenshots
+
+### User management
+
+![User management screen](docs/screenshots/admin-user-management.png)
+
+### Add a CCTV feed
+
+![CCTV feed configuration](docs/screenshots/dashboard-add-cctv-feed.png)
+
+### Sign-in page
+
+![Sign-in page](docs/screenshots/login-page.png)
+
+### Violation snapshot gallery
+
+![Violation snapshot gallery](docs/screenshots/violation-snapshot-gallery.png)
+
+### Live monitoring dashboard
+
+![Live PPE monitoring dashboard](docs/screenshots/dashboard-live-feeds.png)
+
 ## Model training results
 
 Training/validation curves and confusion metrics for the bundled detection
